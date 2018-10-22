@@ -12,8 +12,12 @@ namespace Roxa.Mapper
     {
         public MappingProfile()
         {
-            CreateMap<User, UserBll>();
-            CreateMap<User, UserBll>().ReverseMap();
+            CreateMap<User, UserBll>()
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.UserName));
+                   
+            CreateMap<User, UserBll>()
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.UserName))
+                .ReverseMap(); 
         }
     }
 }

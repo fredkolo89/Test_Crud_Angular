@@ -6,6 +6,7 @@ using Roxa.DAL;
 using Roxa.IoC;
 using Roxa.Repository;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
@@ -26,14 +27,32 @@ namespace Roxa.Services
             _mapper = mapper;
         }
 
-        public string GenerateJwtToken(string name, User user)
+        public string GenerateJwtToken(User user, List<Role> roles)
         {
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, name),
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.NameIdentifier, user.UserName)
             };
+            
+    
+            foreach (var userRole in roles)
+            { 
+                claims.Add(new Claim(ClaimTypes.Role, userRole.Name));
+
+                //zrozumiec na przyszlosc
+
+                //var role = await _roleManager.FindByNameAsync(userRole);
+                //if (role != null)
+                //{
+                //    var roleClaims = await _roleManager.GetClaimsAsync(role);
+                //    foreach (Claim roleClaim in roleClaims)
+                //    {
+                //        claims.Add(roleClaim);
+                //    }
+                //}
+            }
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(IoCContainer.Configuration["JwtIssuerOptions:JwtKey"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -53,7 +72,7 @@ namespace Roxa.Services
         public async Task<IList<UserBll>> GetLists()
         {
             IList<User> userList = (await _userRepository.GetAllAsync()).ToList();
-            return _mapper.Map<IList<User>, IList<UserBll>>(userList);
+            return _mapper.Map<IList<User>, IList<UserBll>>(userList);          
         }
 
         //public void SaveUser(UserBll userBll)

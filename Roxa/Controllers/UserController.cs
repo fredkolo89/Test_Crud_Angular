@@ -35,17 +35,29 @@ namespace Roxa.Controllers
         [HttpPost, Route("login")]
         public async Task<ActionResult> Login([FromBody]LoginModelBll userLogin)
         {
-            var result = await _signInManager.PasswordSignInAsync(userLogin.UserName, userLogin.Password, false, false);
+            try
+            {
+                var result = await _signInManager.PasswordSignInAsync(userLogin.UserName, userLogin.Password, false, false);
 
-            if (result.Succeeded)
-            {
-                var appUser = _userManager.Users.SingleOrDefault(r => r.UserName == userLogin.UserName);
-                return Ok(new { Token = _userCrudInterface.GenerateJwtToken(userLogin.UserName, appUser) });
+                if (result.Succeeded)
+                {
+                    var appUser = _userManager.Users.SingleOrDefault(r => r.UserName == userLogin.UserName);
+                    return Ok(
+                        new {
+                            Token = _userCrudInterface.GenerateJwtToken(appUser, _roleManager.Roles.ToList())
+                        });
+                }
+                else
+                {
+                    return Unauthorized();
+                }
             }
-            else
+            catch (Exception e)
             {
-                return Unauthorized();
+
+                throw;
             }
+
         }
 
         [HttpPost, Route("Register")]
@@ -66,14 +78,17 @@ namespace Roxa.Controllers
             if (result.Succeeded)
             {
                 await _signInManager.SignInAsync(user, false);
-                return Ok(new { Token = _userCrudInterface.GenerateJwtToken(loginModel.UserName, user) });
+                return Ok(
+                    new {
+                        Token = _userCrudInterface.GenerateJwtToken(user, _roleManager.Roles.ToList())
+                    });
             }
 
             return Unauthorized();
         }
 
 
-        [HttpGet, Route("GetList")]
+        [HttpGet, Route("GetList"), Authorize(Roles = "Manager")]
         public async Task<ActionResult> GetList()
         {
             IList<UserBll> userBll = await _userCrudInterface.GetLists();
